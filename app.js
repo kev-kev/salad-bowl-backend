@@ -12,20 +12,24 @@ const port = 4001;
 server.listen(port, () => console.log(`Listening on port ${port}`));
 
 io.on("connection", (socket) => {
-  socket.broadcast.emit("user joined");
   console.log("user joined");
 
-  socket.on("set username", (username) => {
-    socket.username = username;
+  socket.on("set room code", (code) => {
+    if (!socket.roomCodes) {
+      socket.roomCodes = [];
+    }
+    socket.roomCodes.push(code);
+    console.log("New room created ", code);
   });
 
-  socket.on("disconnect", () => {
-    io.emit("user disconnected");
+  socket.on("join room", (code) => {
+    if (socket.roomCodes.includes(code)) {
+      socket.join(code);
+      console.log("User joined room ", code);
+    } else {
+      // room not found
+      console.log(socket.roomCodes);
+      console.log("Could not find room ", code);
+    }
   });
 });
-
-const getApiAndEmit = (socket) => {
-  const response = new Date();
-  console.log(response);
-  socket.emit("FromAPI", response);
-};
