@@ -2,12 +2,12 @@
 
 **Work in Progress**
 
-Online multiplayer game made using websockets and React. 
+Online multiplayer game made using websockets and React.
 Submit words, then players take turns giving clues to try to get their team to guess the words.
 
 <img src="saladBowl.png" width="500"/>
 
-Backend code: https://github.com/kev-kev/salad-bowl-frontend
+Frontend code: https://github.com/kev-kev/salad-bowl-frontend
 
 ## 1. Clone repositories
 
@@ -44,7 +44,7 @@ In terminal, cd to the frontend folder and run:
 
 `npm start`
 
-Then, in the backend folder, run: 
+Then, in the backend folder, run:
 
 `node app.js`
 
