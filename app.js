@@ -7,28 +7,25 @@ const io = require("socket.io")(server, {
   },
 });
 
-const port = 4001;
+const PORT = 4001;
 
-server.listen(port, () => console.log(`Listening on port ${port}`));
+const roomCodes = [];
+
+server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 io.on("connection", (socket) => {
-  console.log("user joined");
-
   socket.on("set room code", (code) => {
-    if (!socket.roomCodes) {
-      socket.roomCodes = [];
-    }
-    socket.roomCodes.push(code);
+    roomCodes.push(code);
     console.log("New room created ", code);
   });
 
   socket.on("join room", (code) => {
-    if (socket.roomCodes.includes(code)) {
+    if (roomCodes.includes(code)) {
+      console.log("Room codes: ", roomCodes);
       socket.join(code);
       console.log("User joined room ", code);
     } else {
       // room not found
-      console.log(socket.roomCodes);
       console.log("Could not find room ", code);
     }
   });
