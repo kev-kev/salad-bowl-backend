@@ -9,15 +9,17 @@ class Room {
   }
 
   joinRoom() {
-    const teamToJoin;
-    if (this.team1.users.length() > this.team2.users.length())
-    {
+    const teamToJoin = null;
+    if (this.team1.users.length() > this.team2.users.length()) {
       teamToJoin = this.team2;
-    } else if (this.team1.users.length() < this.team2.users.length())
-    {
+    } else if (this.team1.users.length() < this.team2.users.length()) {
       teamToJoin = this.team1;
     } else {
-      teamToJoin = Math.round(Math.random())[this.team1, this.team2];
+      teamToJoin = Math.round(Math.random())[(this.team1, this.team2)];
     }
   }
 }
+
+module.exports = {
+  Room,
+};

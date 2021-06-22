@@ -1,3 +1,4 @@
+const { Room } = require("./bin/room");
 const app = require("express")();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
@@ -8,24 +9,52 @@ const io = require("socket.io")(server, {
 });
 
 const PORT = 4001;
-
-const rooms = [];
-
 server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
+const ROOM_CODE_LENGTH = 5;
+const rooms = [];
+
+function createRoomCode() {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let result = "";
+  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  if (checkIfRoomExists(result)) {
+    return createRoomCode();
+  }
+
+  return result;
+}
+
+function checkIfRoomExists(code) {
+  for (let i = 0; i < rooms.length; i++) {
+    if (rooms[i].code == code) {
+      return true;
+    }
+  }
+  return false;
+}
+
 io.on("connection", (socket) => {
-  socket.on("create room", (code) => {
-    rooms.push(code);
-    console.log("New room created ", code);
+  socket.on("create room", (cb) => {
+    const newRoomCode = createRoomCode();
+    const newRoom = new Room(newRoomCode);
+    rooms.push(newRoom);
+    console.log("New room created ", newRoom);
+    cb({
+      code: newRoomCode,
+    });
   });
 
   socket.on("join room", (code) => {
-    if (roomCodes.includes(code)) {
-      console.log("Room codes: ", roomCodes);
+    code = code.toUpperCase();
+    if (checkIfRoomExists(code)) {
       socket.join(code);
       console.log("User joined room ", code);
     } else {
-      console.log("Could not find room ", code);
+      console.log("No rooms with code ", code);
     }
   });
 
