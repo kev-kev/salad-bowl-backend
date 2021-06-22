@@ -9,14 +9,13 @@ const io = require("socket.io")(server, {
 
 const PORT = 4001;
 
-const roomCodes = [];
+const rooms = [];
 
 server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 io.on("connection", (socket) => {
-  console.log("Connected");
   socket.on("create room", (code) => {
-    roomCodes.push(code);
+    rooms.push(code);
     console.log("New room created ", code);
   });
 
@@ -26,17 +25,15 @@ io.on("connection", (socket) => {
       socket.join(code);
       console.log("User joined room ", code);
     } else {
-      // room not found
       console.log("Could not find room ", code);
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log("Disconnected");
-  });
+  socket.on("disconnect", () => {});
 
+  // use io.emit() to emit to all clients including the event emitter
+  // use socket.smit() to emit to all but the event emitter
   socket.on("toggle logo", (room) => {
-    console.log("toggle firing in server. room = ", room);
     io.to(room).emit("receive toggle logo");
   });
 });
