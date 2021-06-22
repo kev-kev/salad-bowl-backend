@@ -14,7 +14,8 @@ const roomCodes = [];
 server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 io.on("connection", (socket) => {
-  socket.on("set room code", (code) => {
+  console.log("Connected");
+  socket.on("create room", (code) => {
     roomCodes.push(code);
     console.log("New room created ", code);
   });
@@ -28,5 +29,14 @@ io.on("connection", (socket) => {
       // room not found
       console.log("Could not find room ", code);
     }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected");
+  });
+
+  socket.on("toggle logo", (room) => {
+    console.log("toggle firing in server. room = ", room);
+    io.to(room).emit("receive toggle logo");
   });
 });
