@@ -1,6 +1,10 @@
 class User {
   constructor(name) {
     this.name = name;
-    isClueGiver = false;
+    this.isClueGiver = false;
   }
 }
+
+module.exports = {
+  User,
+};

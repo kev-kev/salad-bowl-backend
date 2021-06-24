@@ -4,3 +4,7 @@ class Card {
     this.explanation = explanation;
   }
 }
+
+module.exports = {
+  Card,
+};
