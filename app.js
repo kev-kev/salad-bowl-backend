@@ -14,7 +14,7 @@ const PORT = 4001;
 server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOM_CODE_LENGTH = 5;
-const rooms = [];
+const ROOMS = [];
 
 function createRoomCode() {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -22,19 +22,27 @@ function createRoomCode() {
   for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
-  if (checkIfRoomExists(result)) {
+  if (getRoom(result)) {
     return createRoomCode();
   }
   return result;
 }
 
-function checkIfRoomExists(code) {
-  for (let i = 0; i < rooms.length; i++) {
-    if (rooms[i].code == code) {
-      return true;
+// function checkIfRoomExists(code) {
+//   for (let i = 0; i < ROOMS.length; i++) {
+//     if (ROOMS[i].code == code) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
+
+function getRoom(roomCode) {
+  for (i = 0; i < ROOMS.length; i++) {
+    if (ROOMS[i].code == roomCode) {
+      return ROOMS[i];
     }
   }
-  return false;
 }
 
 io.on("connection", (socket) => {
@@ -42,7 +50,7 @@ io.on("connection", (socket) => {
     const newRoomCode = createRoomCode();
     console.log(newRoomCode);
     const newRoom = new Room(newRoomCode);
-    rooms.push(newRoom);
+    ROOMS.push(newRoom);
     console.log("New room created ", newRoom);
     cb({
       code: newRoomCode,
@@ -50,7 +58,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join room", (code) => {
-    if (checkIfRoomExists(code)) {
+    if (getRoom(code)) {
       socket.join(code);
       console.log("User joined room ", code);
     } else {
@@ -58,27 +66,15 @@ io.on("connection", (socket) => {
     }
   });
 
-  // use io.emit() to emit to all clients including the event emitter
-  // use socket.smit() to emit to all but the event emitter
-  socket.on("add user", (username, roomCode) => {
+  socket.on("create user", (username, roomCode) => {
     newUser = new User(username);
-    curRoom = null;
-    for (i = 0; i < rooms.length; i++) {
-      if (rooms[i].code == roomCode) {
-        curRoom = rooms[i];
-      }
-    }
-    if (curRoom.team1.length > curRoom.team2.length) {
-      curRoom.team2.users.push(newUser);
-    } else if (curRoom.team1.length < curRoom.team2.length) {
-      curRoom.team1.users.push(newUser);
-    } else {
-      const rand = Math.round(Math.random());
-      rand == 0
-        ? curRoom.team1.users.push(newUser)
-        : curRoom.team2.users.push(newUser);
-    }
-    console.log(curRoom);
+    curRoom = getRoom(roomCode);
+
+    curRoom.addUserToTeam(newUser);
+  });
+
+  socket.on("start game", (roomCode) => {
+    getRoom(roomCode).startGame();
   });
 
   socket.on("disconnect", () => {});
