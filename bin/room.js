@@ -30,7 +30,7 @@ class Room {
     console.log("game was started!");
     const turnOrder = [];
     const rand = Math.round(Math.random());
-    rand == 0 ? turnOrder.push(0, 1) : turnOrder.push(1, 0);
+    rand === 0 ? turnOrder.push(0, 1) : turnOrder.push(1, 0);
     shuffle(this.team1.users);
     shuffle(this.team2.users);
     console.log(this.team1.users, this.team2.users);
