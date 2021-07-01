@@ -30,8 +30,8 @@ function createRoomCode() {
 }
 
 function getRoom(roomCode) {
-  for (i = 0; i < ROOMS.length; i++) {
-    if (ROOMS[i].code == roomCode) {
+  for (let i = 0; i < ROOMS.length; i++) {
+    if (ROOMS[i].code === roomCode) {
       return ROOMS[i];
     }
   }
