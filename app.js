@@ -62,16 +62,23 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("create user", (username, roomCode) => {
+  socket.on("create user", (username, roomCode, cb) => {
     newUser = new User(username);
     curRoom = getRoom(roomCode);
     curRoom.addUserToTeam(newUser);
+    cb({
+      room: curRoom,
+    });
   });
 
-  socket.on("start game", (roomCode) => {
+  socket.on("start game", (roomCode, cb) => {
     curRoom = getRoom(roomCode);
     curRoom.startGame();
+    cb({
+      room: curRoom,
+    });
   });
 
+  // get new room leader
   socket.on("disconnect", () => {});
 });
