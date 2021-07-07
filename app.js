@@ -17,6 +17,7 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
 
+// Runs again if we already have a room with that code
 function createRoomCode() {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let result = "";
@@ -38,6 +39,8 @@ function getRoom(roomCode) {
 }
 
 io.on("connection", (socket) => {
+  console.log("Client connected");
+
   socket.on("create room", (cb) => {
     const newRoomCode = createRoomCode();
     const newRoom = new Room(newRoomCode);
@@ -53,32 +56,32 @@ io.on("connection", (socket) => {
 
     if (curRoom) {
       socket.join(code);
-      console.log("User joined room ", code);
+      console.log("User joined room", code);
     } else {
-      console.log("No rooms with code ", code);
+      console.log("No rooms with code", code);
     }
+
     cb({
       room: curRoom,
     });
   });
 
-  socket.on("create user", (username, roomCode, cb) => {
-    newUser = new User(username);
+  socket.on("create user", (username, roomCode) => {
     curRoom = getRoom(roomCode);
+    newUser = new User(username);
     curRoom.addUserToTeam(newUser);
-    cb({
-      room: curRoom,
-    });
+    io.in(roomCode).emit("new user created", curRoom);
   });
 
-  socket.on("start game", (roomCode, cb) => {
+  socket.on("start game", (roomCode) => {
     curRoom = getRoom(roomCode);
     curRoom.startGame();
-    cb({
-      room: curRoom,
-    });
+    console.log("starting game in", curRoom.code);
+    io.in(roomCode).emit("game started", curRoom);
   });
 
-  // get new room leader
-  socket.on("disconnect", () => {});
+  // get new room leader, or delete room if empty
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
 });
