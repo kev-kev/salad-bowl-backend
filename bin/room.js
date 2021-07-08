@@ -17,9 +17,10 @@ class Room {
       console.log("setting roomOwner to", user.name);
       this.roomOwner = user.name;
     }
-    if (this.team1.length > this.team2.length) {
+    if (this.team1.users.length > this.team2.users.length) {
+      console.log("less in team 2");
       this.team2.users.push(user);
-    } else if (this.team1.length < this.team2.length) {
+    } else if (this.team1.users.length < this.team2.users.length) {
       this.team1.users.push(user);
     } else {
       const rand = Math.round(Math.random());
@@ -28,13 +29,49 @@ class Room {
   }
 
   startGame() {
-    // randomly pick a team to go first, then a user to be the clue giver
+    // Randomly pick a team to go first, then a user to be the clue giver
     this.gameInProgress = true;
     const turnOrder = [];
     const rand = Math.round(Math.random());
     rand === 0 ? turnOrder.push(0, 1) : turnOrder.push(1, 0);
     shuffle(this.team1.users);
     shuffle(this.team2.users);
+  }
+
+  removeUser(username) {
+    // Check which team the user is on and
+    for (let i = 0; i < this.team1.users.length; i++) {
+      if (this.team1.users[i].username === username) {
+        this.team1.users.splice(i, 1);
+      }
+    }
+    for (let j = 0; j < this.team2.users.length; j++) {
+      if (this.team2.users[j].username === username) {
+        this.team1.users.splice(j, 1);
+      }
+    }
+  }
+
+  checkIfValidName(username) {
+    // Returns false if name isn't present or unqique (non-case sensitive)
+    if (username.length < 1) {
+      return false;
+    }
+    username = username.toLowerCase();
+    const len = Math.max(room.team1.users.length, room.team2.users.length);
+    for (let i = 0; i < len; i++) {
+      if (room.team1.users[i]) {
+        if (room.team1.users[i].name.toLowerCase() === username) {
+          return false;
+        }
+      }
+      if (room.team2.users[i]) {
+        if (room.team2.users[i].name.toLowerCase() === username) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 }
 

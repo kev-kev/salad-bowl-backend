@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
     const newRoomCode = createRoomCode();
     const newRoom = new Room(newRoomCode);
     ROOMS.push(newRoom);
-    console.log("New room created:", newRoom);
+    console.log("New room created:", newRoom.code);
     cb({
       room: newRoom,
     });
@@ -66,7 +66,12 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("leave room", (userame, curRoom) => {
+    console.log(username, "disconnected");
+  });
+
   socket.on("create user", (username, roomCode) => {
+    socket.user = username;
     curRoom = getRoom(roomCode);
     newUser = new User(username);
     curRoom.addUserToTeam(newUser);
