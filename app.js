@@ -38,6 +38,13 @@ function getRoom(roomCode) {
   }
 }
 
+function leaveRoom(username, roomCode) {
+  const curRoom = getRoom(roomCode);
+  console.log(curRoom);
+  curRoom.removeUser(username);
+  io.in(roomCode).emit("update room", curRoom);
+}
+
 io.on("connection", (socket) => {
   console.log("Client connected");
 
@@ -53,40 +60,39 @@ io.on("connection", (socket) => {
 
   socket.on("join room", (code, cb) => {
     const curRoom = getRoom(code);
-
     if (curRoom) {
       socket.join(code);
+      socket.roomCode = code;
       console.log("User joined room", code);
     } else {
       console.log("No rooms with code", code);
     }
-
     cb({
       room: curRoom,
     });
   });
 
-  socket.on("leave room", (userame, curRoom) => {
-    console.log(username, "disconnected");
-  });
-
   socket.on("create user", (username, roomCode) => {
-    socket.user = username;
+    socket.username = username;
+    console.log("New user:", socket.username);
     curRoom = getRoom(roomCode);
     newUser = new User(username);
     curRoom.addUserToTeam(newUser);
-    io.in(roomCode).emit("new user created", curRoom);
+    io.in(roomCode).emit("update room", curRoom);
   });
 
   socket.on("start game", (roomCode) => {
     curRoom = getRoom(roomCode);
     curRoom.startGame();
     console.log("starting game in", curRoom.code);
-    io.in(roomCode).emit("game started", curRoom);
+    io.in(roomCode).emit("update room", curRoom);
   });
 
   // get new room leader, or delete room if empty
   socket.on("disconnect", () => {
-    console.log("Client disconnected");
+    if (socket.username) {
+      socket.emit("leave room", socket.username, socket.roomCode);
+      leaveRoom(socket.username, socket.roomCode);
+    }
   });
 });
