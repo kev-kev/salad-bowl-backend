@@ -21,11 +21,7 @@ const DELETE_TIMER = 30000;
 io.on("connection", (socket) => {
   console.log("Client connected");
 
-  // when a room is created, create a value that decrements once/second
-  // when it reaches 0, need to check if the room has any users (room owner?)
-  // if not, delete the room
   let timeoutId;
-
   // Deleting the room if no users are created in time
   socket.on("create room", (cb) => {
     const newRoomCode = createRoomCode();
@@ -60,10 +56,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("create user", (username, roomCode) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      console.log("user created, timer cleared");
-    }
+    if (timeoutId) clearTimeout(timeoutId);
     socket.username = username;
     console.log("New user:", socket.username);
     curRoom = getRoom(roomCode);
@@ -86,8 +79,19 @@ io.on("connection", (socket) => {
   // get new room leader, or delete room if empty
   socket.on("disconnect", () => {
     if (socket.username) {
-      socket.emit("leave room", socket.username, socket.roomCode);
-      leaveRoom(socket.username, socket.roomCode);
+      const curRoom = getRoom(socket.roomCode);
+      if (curRoom) {
+        socket.emit("leave room", socket.username, socket.roomCode);
+        leaveRoom(curRoom, socket.username);
+      }
+    }
+  });
+
+  socket.on("page close", (roomCode, username) => {
+    const curRoom = getRoom(roomCode);
+    if (username) leaveRoom(curRoom, username);
+    if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
+      deleteRoom(roomCode);
     }
   });
 });
@@ -99,20 +103,18 @@ function createRoomCode() {
   for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
-  if (getRoom(result)) {
-    return createRoomCode();
-  }
+  if (getRoom(result)) return createRoomCode();
+
   return result;
 }
 
-function leaveRoom(username, roomCode) {
-  const curRoom = getRoom(roomCode);
+function leaveRoom(curRoom, username) {
   if (curRoom.team1.users.length + curRoom.team2.users.length === 1) {
-    deleteRoom(roomCode);
-    console.log(roomCode, "was deleted");
+    deleteRoom(curRoom.code);
+    console.log(curRoom.code, "was deleted");
   } else {
     curRoom.removeUser(username);
-    io.to(roomCode).emit("update room", curRoom);
+    io.to(curRoom.code).emit("update room", curRoom);
   }
 }
 
@@ -125,6 +127,7 @@ function getRoom(roomCode) {
 }
 
 function deleteRoom(roomCode) {
+  console.log("deleting room", roomCode);
   for (let i = 0; i < ROOMS.length; i++) {
     if (ROOMS[i].code === roomCode) {
       ROOMS.splice(i, 1);
