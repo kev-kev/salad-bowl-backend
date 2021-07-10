@@ -28,7 +28,7 @@ class Room {
   }
 
   removeUser(username) {
-    // Check which team the user is on and
+    // Check which team the user is on and remove from team array
     for (let i = 0; i < this.team1.users.length; i++) {
       if (this.team1.users[i].name === username) {
         this.team1.users.splice(i, 1);
@@ -39,6 +39,7 @@ class Room {
         this.team1.users.splice(j, 1);
       }
     }
+    // If the removed user was the room leader, pick another user to be leader
     if (this.roomOwner === username) {
       this.roomOwner = getRandomUser(this.team1.users, this.team2.users);
       console.log("New Room owner:", this.roomOwner);

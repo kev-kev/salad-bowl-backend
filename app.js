@@ -16,63 +16,54 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
-
-// Runs again if we already have a room with that code
-function createRoomCode() {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let result = "";
-  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  if (getRoom(result)) {
-    return createRoomCode();
-  }
-  return result;
-}
-
-function getRoom(roomCode) {
-  for (let i = 0; i < ROOMS.length; i++) {
-    if (ROOMS[i].code === roomCode) {
-      return ROOMS[i];
-    }
-  }
-}
-
-function leaveRoom(username, roomCode) {
-  const curRoom = getRoom(roomCode);
-  console.log(curRoom);
-  curRoom.removeUser(username);
-  io.in(roomCode).emit("update room", curRoom);
-}
+const DELETE_TIMER = 30000;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
 
+  // when a room is created, create a value that decrements once/second
+  // when it reaches 0, need to check if the room has any users (room owner?)
+  // if not, delete the room
+  let timeoutId;
+
+  // Deleting the room if no users are created in time
   socket.on("create room", (cb) => {
     const newRoomCode = createRoomCode();
     const newRoom = new Room(newRoomCode);
     ROOMS.push(newRoom);
     console.log("New room created:", newRoom.code);
+    timeoutId = setTimeout(() => {
+      const curRoom = getRoom(newRoomCode);
+      if (!curRoom.roomOwner) {
+        deleteRoom(newRoom.code);
+        io.in(newRoomCode).emit("update room", null);
+      }
+    }, DELETE_TIMER);
     cb({
       room: newRoom,
     });
   });
 
-  socket.on("join room", (code, cb) => {
-    const curRoom = getRoom(code);
+  socket.on("join room", (roomCode, cb) => {
+    const curRoom = getRoom(roomCode);
     if (curRoom) {
-      socket.join(code);
-      socket.roomCode = code;
-      console.log("User joined room", code);
+      socket.join(roomCode);
+      socket.roomCode = roomCode;
+      console.log("User joined room", roomCode);
     } else {
-      console.log("No rooms with code", code);
+      console.log("No rooms with code", roomCode);
     }
+    io.in(roomCode).emit("update room", curRoom);
     cb({
       room: curRoom,
     });
   });
 
   socket.on("create user", (username, roomCode) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      console.log("user created, timer cleared");
+    }
     socket.username = username;
     console.log("New user:", socket.username);
     curRoom = getRoom(roomCode);
@@ -88,6 +79,10 @@ io.on("connection", (socket) => {
     io.in(roomCode).emit("update room", curRoom);
   });
 
+  socket.on("delete room", (roomCode) => {
+    deleteRoom(roomCode);
+  });
+
   // get new room leader, or delete room if empty
   socket.on("disconnect", () => {
     if (socket.username) {
@@ -96,3 +91,43 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+// Runs again if we already have a room with that code
+function createRoomCode() {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let result = "";
+  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  if (getRoom(result)) {
+    return createRoomCode();
+  }
+  return result;
+}
+
+function leaveRoom(username, roomCode) {
+  const curRoom = getRoom(roomCode);
+  if (curRoom.team1.users.length + curRoom.team2.users.length === 1) {
+    deleteRoom(roomCode);
+    console.log(roomCode, "was deleted");
+  } else {
+    curRoom.removeUser(username);
+    io.to(roomCode).emit("update room", curRoom);
+  }
+}
+
+function getRoom(roomCode) {
+  for (let i = 0; i < ROOMS.length; i++) {
+    if (ROOMS[i].code === roomCode) {
+      return ROOMS[i];
+    }
+  }
+}
+
+function deleteRoom(roomCode) {
+  for (let i = 0; i < ROOMS.length; i++) {
+    if (ROOMS[i].code === roomCode) {
+      ROOMS.splice(i, 1);
+    }
+  }
+}
