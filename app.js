@@ -16,7 +16,7 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
-const DELETE_TIMER = 30000;
+const DELETE_TIMER = 5000;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -29,10 +29,12 @@ io.on("connection", (socket) => {
     ROOMS.push(newRoom);
     console.log("New room created:", newRoom.code);
     timeoutId = setTimeout(() => {
-      const curRoom = getRoom(newRoomCode);
-      if (!curRoom.roomOwner) {
-        deleteRoom(newRoom.code);
-        io.in(newRoomCode).emit("update room", null);
+      const curRoom = getRoom(newRoom.code);
+      if (curRoom) {
+        if (!curRoom.roomOwner) {
+          deleteRoom(newRoom.code);
+          io.in(newRoomCode).emit("update room", null);
+        }
       }
     }, DELETE_TIMER);
     cb({
@@ -89,9 +91,11 @@ io.on("connection", (socket) => {
 
   socket.on("page close", (roomCode, username) => {
     const curRoom = getRoom(roomCode);
-    if (username) leaveRoom(curRoom, username);
-    if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
-      deleteRoom(roomCode);
+    if (curRoom) {
+      if (username) leaveRoom(curRoom, username);
+      if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
+        deleteRoom(roomCode);
+      }
     }
   });
 });
