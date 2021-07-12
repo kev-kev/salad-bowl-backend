@@ -1,5 +1,6 @@
 const { Room } = require("./bin/room");
 const { User } = require("./bin/user");
+const { Card } = require("./bin/card");
 
 const express = require("express");
 const app = express();
@@ -97,6 +98,13 @@ io.on("connection", (socket) => {
         deleteRoom(roomCode);
       }
     }
+  });
+
+  socket.on("submit word", (word, explanation) => {
+    const curRoom = getRoom(socket.roomCode);
+    const newCard = new Card(word, explanation);
+    curRoom.deck.push(newCard);
+    io.in(socket.roomCode).emit("update room", curRoom);
   });
 });
 
