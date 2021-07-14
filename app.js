@@ -17,8 +17,9 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
-const DELETE_TIMER = 5000;
-const WORD_SUBMIT_TIMER = 7000;
+const DELETE_ROOM_TIMER = 5000;
+const WORD_SUBMIT_TIMER = 15000;
+const MAX_USERS = 1;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -32,13 +33,11 @@ io.on("connection", (socket) => {
     console.log("New room created:", newRoom.code);
     timeoutId = setTimeout(() => {
       const curRoom = getRoom(newRoom.code);
-      if (curRoom) {
-        if (!curRoom.roomOwner) {
-          deleteRoom(newRoom.code);
-          io.in(newRoomCode).emit("update room", null);
-        }
+      if (curRoom && !curRoom.roomOwner) {
+        deleteRoom(newRoom.code);
+        io.in(newRoomCode).emit("update room", null);
       }
-    }, DELETE_TIMER);
+    }, DELETE_ROOM_TIMER);
     cb({
       room: newRoom,
     });
@@ -47,16 +46,23 @@ io.on("connection", (socket) => {
   socket.on("join room", (roomCode, cb) => {
     const curRoom = getRoom(roomCode);
     if (curRoom) {
-      socket.join(roomCode);
-      socket.roomCode = roomCode;
-      console.log("User joined room", roomCode);
+      if (
+        curRoom.team1.users.length + curRoom.team2.users.length ==
+        MAX_USERS
+      ) {
+        socket.emit("error", `Room ${roomCode} is full`);
+      } else {
+        socket.join(roomCode);
+        socket.roomCode = roomCode;
+        io.in(roomCode).emit("update room", curRoom);
+        cb({
+          room: curRoom,
+        });
+        console.log("User joined room", roomCode);
+      }
     } else {
-      console.log("No rooms with code", roomCode);
+      socket.emit("error", `Room ${roomCode} doesn't exist!`);
     }
-    io.in(roomCode).emit("update room", curRoom);
-    cb({
-      room: curRoom,
-    });
   });
 
   socket.on("create user", (username, roomCode) => {
@@ -71,27 +77,18 @@ io.on("connection", (socket) => {
 
   socket.on("start game", (roomCode) => {
     curRoom = getRoom(roomCode);
-    curRoom.startGame();
-    io.in(roomCode).emit("update room", curRoom);
-    setTimeout(() => {
-      curRoom.phase = "guessing";
+    if (curRoom) {
+      curRoom.startGame();
       io.in(roomCode).emit("update room", curRoom);
-    }, WORD_SUBMIT_TIMER);
+      setTimeout(() => {
+        curRoom.phase = "guessing";
+        io.in(roomCode).emit("update room", curRoom);
+      }, WORD_SUBMIT_TIMER);
+    }
   });
 
   socket.on("delete room", (roomCode) => {
     deleteRoom(roomCode);
-  });
-
-  // get new room leader, or delete room if empty
-  socket.on("disconnect", () => {
-    if (socket.username) {
-      const curRoom = getRoom(socket.roomCode);
-      if (curRoom) {
-        socket.emit("leave room", socket.username, socket.roomCode);
-        leaveRoom(curRoom, socket.username);
-      }
-    }
   });
 
   socket.on("page close", (roomCode, username) => {
@@ -109,6 +106,16 @@ io.on("connection", (socket) => {
     const newCard = new Card(word, explanation);
     curRoom.deck.push(newCard);
     io.in(socket.roomCode).emit("update room", curRoom);
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.username) {
+      const curRoom = getRoom(socket.roomCode);
+      if (curRoom) {
+        socket.emit("leave room", socket.username, socket.roomCode);
+        leaveRoom(curRoom, socket.username);
+      }
+    }
   });
 });
 
