@@ -18,6 +18,7 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
 const DELETE_TIMER = 5000;
+const WORD_SUBMIT_TIMER = 7000;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -71,8 +72,11 @@ io.on("connection", (socket) => {
   socket.on("start game", (roomCode) => {
     curRoom = getRoom(roomCode);
     curRoom.startGame();
-    console.log("starting game in", curRoom.code);
     io.in(roomCode).emit("update room", curRoom);
+    setTimeout(() => {
+      curRoom.phase = "guessing";
+      io.in(roomCode).emit("update room", curRoom);
+    }, WORD_SUBMIT_TIMER);
   });
 
   socket.on("delete room", (roomCode) => {
@@ -123,7 +127,7 @@ function createRoomCode() {
 function leaveRoom(curRoom, username) {
   if (curRoom.team1.users.length + curRoom.team2.users.length === 1) {
     deleteRoom(curRoom.code);
-    console.log(curRoom.code, "was deleted");
+    console.log(curRoom.code, "was deleted for being empty.");
   } else {
     curRoom.removeUser(username);
     io.to(curRoom.code).emit("update room", curRoom);

@@ -9,6 +9,7 @@ class Room {
     this.roomOwner = null;
     this.clueGiver = null;
     this.gameInProgress = false;
+    this.phase = "waiting";
   }
 
   // adds user to team with less players, or a random team if player count is equal
@@ -49,6 +50,7 @@ class Room {
   startGame() {
     // Randomly pick a team to go first, then a user to be the clue giver
     this.gameInProgress = true;
+    this.phase = "submitting";
     const turnOrder = [];
     const rand = Math.round(Math.random());
     rand === 0 ? turnOrder.push(0, 1) : turnOrder.push(1, 0);
