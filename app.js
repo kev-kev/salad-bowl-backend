@@ -66,29 +66,29 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("create user", (username, roomCode) => {
+  socket.on("create user", (username) => {
     if (timeoutId) clearTimeout(timeoutId);
-    curRoom = getRoom(roomCode);
+    curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       socket.username = username;
       console.log("New user:", socket.username);
       newUser = new User(username);
       curRoom.addUserToTeam(newUser);
-      io.in(roomCode).emit("update room", curRoom);
+      io.in(socket.roomCode).emit("update room", curRoom);
     } else {
       socket.emit("update room", null);
       socket.emit("error", "Something went wrong!");
     }
   });
 
-  socket.on("start game", (roomCode) => {
-    curRoom = getRoom(roomCode);
+  socket.on("start game", () => {
+    curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       curRoom.startGame();
-      io.in(roomCode).emit("update room", curRoom);
+      io.in(socket.roomCode).emit("update room", curRoom);
       setTimeout(() => {
         curRoom.phase = "guessing";
-        io.in(roomCode).emit("update room", curRoom);
+        io.in(socket.roomCode).emit("update room", curRoom);
       }, WORD_SUBMIT_TIMER);
     } else {
       socket.emit("update room", null);
@@ -96,16 +96,16 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("delete room", (roomCode) => {
-    deleteRoom(roomCode);
+  socket.on("delete room", () => {
+    deleteRoom(socket.roomCode);
   });
 
-  socket.on("page close", (roomCode, username) => {
-    const curRoom = getRoom(roomCode);
+  socket.on("page close", (username) => {
+    const curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       if (username) leaveRoom(curRoom, username);
       if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
-        deleteRoom(roomCode);
+        deleteRoom(socket.roomCode);
       }
     }
   });
