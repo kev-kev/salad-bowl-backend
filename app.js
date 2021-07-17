@@ -17,8 +17,8 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
-const DELETE_ROOM_TIMER = 5000;
-const WORD_SUBMIT_TIMER = 15000;
+const DELETE_ROOM_TIMER = 15000;
+const WORD_SUBMIT_TIMER = 5000;
 const MAX_USERS = 2;
 
 io.on("connection", (socket) => {
@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
       curRoom.startGame();
       io.in(socket.roomCode).emit("update room", curRoom);
       setTimeout(() => {
+        curRoom.shuffleCards();
         curRoom.phase = "guessing";
         io.in(socket.roomCode).emit("update room", curRoom);
       }, WORD_SUBMIT_TIMER);
@@ -114,6 +115,7 @@ io.on("connection", (socket) => {
     const curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       const newCard = new Card(word, explanation);
+      console.log(newCard);
       curRoom.deck.push(newCard);
       io.in(socket.roomCode).emit("update room", curRoom);
     } else {

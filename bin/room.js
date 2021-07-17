@@ -8,11 +8,11 @@ class Room {
     this.team2 = { users: [], score: 0, isGuessing: false };
     this.roomOwner = null;
     this.clueGiver = null;
-    this.gameInProgress = false;
     this.phase = "waiting";
   }
 
   // adds user to team with less players, or a random team if player count is equal
+  // return 0 if added to team1 and 1 if added to team2
   addUserToTeam(user) {
     if (this.team1.users.length === 0 && this.team2.users.length === 0) {
       console.log("Setting the room owner to:", user);
@@ -20,11 +20,19 @@ class Room {
     }
     if (this.team1.users.length > this.team2.users.length) {
       this.team2.users.push(user);
+      return 1;
     } else if (this.team1.users.length < this.team2.users.length) {
       this.team1.users.push(user);
+      return 0;
     } else {
       const rand = Math.round(Math.random());
-      rand == 0 ? this.team1.users.push(user) : this.team2.users.push(user);
+      if (rand == 0) {
+        this.team1.users.push(user);
+        return 0;
+      } else {
+        this.team2.users.push(user);
+        return 1;
+      }
     }
   }
 
@@ -49,13 +57,22 @@ class Room {
 
   startGame() {
     // Randomly pick a team to go first, then a user to be the clue giver
-    this.gameInProgress = true;
     this.phase = "submitting";
     const turnOrder = [];
     const rand = Math.round(Math.random());
-    rand === 0 ? turnOrder.push(0, 1) : turnOrder.push(1, 0);
     shuffle(this.team1.users);
     shuffle(this.team2.users);
+    if (rand === 0) {
+      turnOrder.push(0, 1);
+      this.clueGiver = this.team1.users[0].name;
+    } else {
+      turnOrder.push(1, 0);
+      this.clueGiver = this.team2.users[0].name;
+    }
+  }
+
+  shuffleCards() {
+    shuffle(this.deck);
   }
 }
 
