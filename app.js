@@ -17,7 +17,7 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
-const DELETE_ROOM_TIMER = 15000;
+const DELETE_ROOM_TIMER = 5000;
 const WORD_SUBMIT_TIMER = 5000;
 const MAX_USERS = 2;
 
@@ -35,11 +35,12 @@ io.on("connection", (socket) => {
       const curRoom = getRoom(newRoom.code);
       if (curRoom && !curRoom.roomOwner) {
         deleteRoom(newRoom.code);
-        io.in(newRoomCode).emit("update room", null);
+        console.log(newRoomCode, "was deleted due to inactivity.");
+        io.in(newRoomCode).emit("clear state");
       }
     }, DELETE_ROOM_TIMER);
     cb({
-      room: newRoom,
+      roomCode: newRoomCode,
     });
   });
 
@@ -55,11 +56,8 @@ io.on("connection", (socket) => {
         socket.join(roomCode);
         socket.roomCode = roomCode;
         console.log(socket.roomCode);
-        io.in(roomCode).emit("update room", curRoom);
-        cb({
-          room: curRoom,
-        });
-        console.log("User joined room", roomCode);
+        cb();
+        console.log("Client joined room", roomCode);
       }
     } else {
       socket.emit("error", `Room ${roomCode} doesn't exist!`);
@@ -70,13 +68,14 @@ io.on("connection", (socket) => {
     if (timeoutId) clearTimeout(timeoutId);
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
-      socket.username = username;
-      console.log("New user:", socket.username);
+      console.log("New user:", username);
       newUser = new User(username);
-      curRoom.addUserToTeam(newUser);
+      socket.username = username;
+      const teamIndex = curRoom.addUserToTeam(newUser);
       io.in(socket.roomCode).emit("update room", curRoom);
+      // io.in(socket.roomCode).emit("new user", teamIndex);
     } else {
-      socket.emit("update room", null);
+      socket.emit("clear state");
       socket.emit("error", "Something went wrong!");
     }
   });
@@ -92,19 +91,19 @@ io.on("connection", (socket) => {
         io.in(socket.roomCode).emit("update room", curRoom);
       }, WORD_SUBMIT_TIMER);
     } else {
-      socket.emit("update room", null);
+      socket.emit("clear state");
       socket.emit("error", "Something went wrong!");
     }
   });
 
-  socket.on("delete room", () => {
-    deleteRoom(socket.roomCode);
-  });
+  // socket.on("delete room", () => {
+  //   deleteRoom(socket.roomCode);
+  // });
 
-  socket.on("page close", (username) => {
+  socket.on("page close", () => {
     const curRoom = getRoom(socket.roomCode);
     if (curRoom) {
-      if (username) leaveRoom(curRoom, username);
+      if (socket.username) leaveRoom(curRoom, socket.username);
       if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
         deleteRoom(socket.roomCode);
       }
@@ -120,7 +119,7 @@ io.on("connection", (socket) => {
       io.in(socket.roomCode).emit("update room", curRoom);
     } else {
       socket.emit("error", "Something went wrong!");
-      socket.emit("update room", null);
+      socket.emit("clear state");
     }
   });
 
@@ -166,7 +165,6 @@ function getRoom(roomCode) {
 }
 
 function deleteRoom(roomCode) {
-  console.log("deleting room", roomCode);
   for (let i = 0; i < ROOMS.length; i++) {
     if (ROOMS[i].code === roomCode) {
       ROOMS.splice(i, 1);
