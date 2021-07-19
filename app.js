@@ -56,6 +56,10 @@ io.on("connection", (socket) => {
         socket.join(roomCode);
         socket.roomCode = roomCode;
         console.log(socket.roomCode);
+        // curRoom isnt changing so i wouldnt think i need to emit update room here
+        // but history doesn't redirect if i don't emit update room?
+        // am trying to avoid update room, but not sure what i could emit otherwise
+        io.in(roomCode).emit("update room", curRoom);
         cb();
         console.log("Client joined room", roomCode);
       }
