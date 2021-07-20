@@ -19,7 +19,7 @@ const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
 const DELETE_ROOM_TIMER = 5000;
 const WORD_SUBMIT_TIMER = 5000;
-const MAX_USERS = 2;
+const MAX_USER_COUNT = 2;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -49,15 +49,13 @@ io.on("connection", (socket) => {
     if (curRoom) {
       if (
         curRoom.team1.users.length + curRoom.team2.users.length ==
-        MAX_USERS
+        MAX_USER_COUNT
       ) {
         socket.emit("error", `Room ${roomCode} is full`);
       } else {
         socket.join(roomCode);
         socket.roomCode = roomCode;
-        console.log(curRoom.team1.users);
-        console.log(curRoom.team2.users);
-        socket.emit("set phase", "waiting");
+        socket.emit("set phase", curRoom.phase);
         socket.emit("update team", curRoom.team1.users, 0);
         socket.emit("update team", curRoom.team2.users, 1);
         socket.emit("set room owner", curRoom.roomOwner);
@@ -76,8 +74,15 @@ io.on("connection", (socket) => {
       console.log("New user:", username);
       socket.username = username;
       const teamIndex = curRoom.addUserToTeam(username);
-      io.in(socket.roomCode).emit("update room", curRoom);
-      // io.in(socket.roomCode).emit("new user", teamIndex);
+      if (curRoom.roomOwner === username)
+        socket.emit("set room owner", username);
+      teamIndex === 0
+        ? io
+            .in(socket.roomCode)
+            .emit("update team", curRoom.team1.users, teamIndex)
+        : io
+            .in(socket.roomCode)
+            .emit("update team", curRoom.team2.users, teamIndex);
     } else {
       socket.emit("clear state");
       socket.emit("error", "Something went wrong!");
@@ -88,11 +93,11 @@ io.on("connection", (socket) => {
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       curRoom.startGame();
-      io.in(socket.roomCode).emit("update room", curRoom);
+      io.in(socket.roomCode).emit("set phase", curRoom.phase);
       setTimeout(() => {
         curRoom.shuffleCards();
         curRoom.phase = "guessing";
-        io.in(socket.roomCode).emit("update room", curRoom);
+        io.in(socket.roomCode).emit("set phase", curRoom.phase);
       }, WORD_SUBMIT_TIMER);
     } else {
       socket.emit("clear state");
@@ -120,7 +125,7 @@ io.on("connection", (socket) => {
       const newCard = new Card(word, explanation);
       console.log(newCard);
       curRoom.deck.push(newCard);
-      io.in(socket.roomCode).emit("update room", curRoom);
+      io.in(socket.roomCode).emit("update deck", curRoom.deck);
     } else {
       socket.emit("error", "Something went wrong!");
       socket.emit("clear state");
@@ -156,7 +161,8 @@ function leaveRoom(curRoom, username) {
     console.log(curRoom.code, "was deleted for being empty.");
   } else {
     curRoom.removeUser(username);
-    io.to(curRoom.code).emit("update room", curRoom);
+    io.to(curRoom.code).emit("update team", curRoom.team1.users, 0);
+    io.to(curRoom.code).emit("update team", curRoom.team2.users, 1);
   }
 }
 

@@ -56,7 +56,7 @@ class Room {
   }
 
   startGame() {
-    // Randomly pick a team to go first, then a user to be the clue giver
+    // Randomly picks a team to go first and a user to be the clue giver
     this.phase = "submitting";
     const turnOrder = [];
     const rand = Math.round(Math.random());
@@ -76,13 +76,12 @@ class Room {
   }
 }
 
-const getRandomUser = (team1, team2) => {
-  const users = team1.concat(team2);
-  const randomIndex = Math.floor(Math.random()) * users.length;
-  return users[randomIndex].name;
+const getRandomUser = (teamArr1, teamArr2) => {
+  const all_users = teamArr1.concat(teamArr2);
+  const randomIndex = Math.floor(Math.random()) * all_users.length;
+  return all_users[randomIndex];
 };
 
-// in place fisher-yates shuffle
 const shuffle = (arr) => {
   let lastIndex = arr.length - 1;
   for (i = 0; i < lastIndex; i++) {
