@@ -13,24 +13,24 @@ class Room {
 
   // adds user to team with less players, or a random team if player count is equal
   // return 0 if added to team1 and 1 if added to team2
-  addUserToTeam(user) {
+  addUserToTeam(username) {
     if (this.team1.users.length === 0 && this.team2.users.length === 0) {
-      console.log("Setting the room owner to:", user);
-      this.roomOwner = user.name;
+      console.log("Setting the room owner to:", username);
+      this.roomOwner = username;
     }
     if (this.team1.users.length > this.team2.users.length) {
-      this.team2.users.push(user);
+      this.team2.users.push(username);
       return 1;
     } else if (this.team1.users.length < this.team2.users.length) {
-      this.team1.users.push(user);
+      this.team1.users.push(username);
       return 0;
     } else {
       const rand = Math.round(Math.random());
       if (rand == 0) {
-        this.team1.users.push(user);
+        this.team1.users.push(username);
         return 0;
       } else {
-        this.team2.users.push(user);
+        this.team2.users.push(username);
         return 1;
       }
     }

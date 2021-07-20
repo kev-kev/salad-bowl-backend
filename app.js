@@ -1,5 +1,5 @@
 const { Room } = require("./bin/room");
-const { User } = require("./bin/user");
+// const { User } = require("./bin/user");
 const { Card } = require("./bin/card");
 
 const express = require("express");
@@ -55,11 +55,12 @@ io.on("connection", (socket) => {
       } else {
         socket.join(roomCode);
         socket.roomCode = roomCode;
-        console.log(socket.roomCode);
-        // curRoom isnt changing so i wouldnt think i need to emit update room here
-        // but history doesn't redirect if i don't emit update room?
-        // am trying to avoid update room, but not sure what i could emit otherwise
-        io.in(roomCode).emit("update room", curRoom);
+        console.log(curRoom.team1.users);
+        console.log(curRoom.team2.users);
+        socket.emit("set phase", "waiting");
+        socket.emit("update team", curRoom.team1.users, 0);
+        socket.emit("update team", curRoom.team2.users, 1);
+        socket.emit("set room owner", curRoom.roomOwner);
         cb();
         console.log("Client joined room", roomCode);
       }
@@ -73,9 +74,8 @@ io.on("connection", (socket) => {
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       console.log("New user:", username);
-      newUser = new User(username);
       socket.username = username;
-      const teamIndex = curRoom.addUserToTeam(newUser);
+      const teamIndex = curRoom.addUserToTeam(username);
       io.in(socket.roomCode).emit("update room", curRoom);
       // io.in(socket.roomCode).emit("new user", teamIndex);
     } else {
