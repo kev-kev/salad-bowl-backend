@@ -39,12 +39,12 @@ class Room {
   removeUser(username) {
     // Check which team the user is on and remove from team array
     for (let i = 0; i < this.team1.users.length; i++) {
-      if (this.team1.users[i].name === username) {
+      if (this.team1.users[i] === username) {
         this.team1.users.splice(i, 1);
       }
     }
     for (let j = 0; j < this.team2.users.length; j++) {
-      if (this.team2.users[j].name === username) {
+      if (this.team2.users[j] === username) {
         this.team1.users.splice(j, 1);
       }
     }
@@ -64,11 +64,12 @@ class Room {
     shuffle(this.team2.users);
     if (rand === 0) {
       turnOrder.push(0, 1);
-      this.clueGiver = this.team1.users[0].name;
+      this.clueGiver = this.team1.users[0] || this.team2.users[0];
     } else {
       turnOrder.push(1, 0);
-      this.clueGiver = this.team2.users[0].name;
+      this.clueGiver = this.team2.users[0] || this.team1.users[0];
     }
+    console.log("the cluegiver is:", this.clueGiver);
   }
 
   shuffleCards() {

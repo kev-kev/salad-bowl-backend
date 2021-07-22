@@ -56,8 +56,8 @@ io.on("connection", (socket) => {
         socket.join(roomCode);
         socket.roomCode = roomCode;
         socket.emit("set phase", curRoom.phase);
-        socket.emit("update team", curRoom.team1.users, 0);
-        socket.emit("update team", curRoom.team2.users, 1);
+        socket.emit("update team users", curRoom.team1.users, 0);
+        socket.emit("update team users", curRoom.team2.users, 1);
         socket.emit("set room owner", curRoom.roomOwner);
         cb();
         console.log("Client joined room", roomCode);
@@ -76,13 +76,20 @@ io.on("connection", (socket) => {
       const teamIndex = curRoom.addUserToTeam(username);
       if (curRoom.roomOwner === username)
         socket.emit("set room owner", username);
-      teamIndex === 0
-        ? io
-            .in(socket.roomCode)
-            .emit("update team", curRoom.team1.users, teamIndex)
-        : io
-            .in(socket.roomCode)
-            .emit("update team", curRoom.team2.users, teamIndex);
+      if (teamIndex === 0) {
+        io.in(socket.roomCode).emit(
+          "update team",
+          curRoom.team1.users,
+          teamIndex
+        );
+      } else {
+        io.in(socket.roomCode).emit(
+          "update team",
+          curRoom.team2.users,
+          teamIndex
+        );
+      }
+      socket.emit("set team index", teamIndex);
     } else {
       socket.emit("clear state");
       socket.emit("error", "Something went wrong!");
@@ -94,9 +101,11 @@ io.on("connection", (socket) => {
     if (curRoom) {
       curRoom.startGame();
       io.in(socket.roomCode).emit("set phase", curRoom.phase);
+      io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
       setTimeout(() => {
         curRoom.shuffleCards();
         curRoom.phase = "guessing";
+        io.in(socket.roomCode).emit("update deck", curRoom.deck);
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
       }, WORD_SUBMIT_TIMER);
     } else {
@@ -104,6 +113,8 @@ io.on("connection", (socket) => {
       socket.emit("error", "Something went wrong!");
     }
   });
+
+  // socket.on()
 
   // socket.on("delete room", () => {
   //   deleteRoom(socket.roomCode);
