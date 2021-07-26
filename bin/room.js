@@ -72,6 +72,16 @@ class Room {
     console.log("the cluegiver is:", this.clueGiver);
   }
 
+  scoreWord(teamIndex, word) {
+    teamIndex === 0 ? this.team1.score++ : this.team2.score++;
+    for (let i = 0; i < this.deck.length; i++) {
+      if (this.deck[i].word === word) {
+        const curWord = this.deck.splice(i, 1)[0];
+        this.discard.push(curWord);
+      }
+    }
+  }
+
   shuffleCards() {
     shuffle(this.deck);
   }

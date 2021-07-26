@@ -67,7 +67,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("create user", (username) => {
+  socket.on("create user", (username, cb) => {
     if (timeoutId) clearTimeout(timeoutId);
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
@@ -78,18 +78,21 @@ io.on("connection", (socket) => {
         socket.emit("set room owner", username);
       if (teamIndex === 0) {
         io.in(socket.roomCode).emit(
-          "update team",
+          "update team users",
           curRoom.team1.users,
           teamIndex
         );
       } else {
         io.in(socket.roomCode).emit(
-          "update team",
+          "update team users",
           curRoom.team2.users,
           teamIndex
         );
       }
       socket.emit("set team index", teamIndex);
+      cb({
+        teamIndex,
+      });
     } else {
       socket.emit("clear state");
       socket.emit("error", "Something went wrong!");
@@ -107,6 +110,8 @@ io.on("connection", (socket) => {
         curRoom.phase = "guessing";
         io.in(socket.roomCode).emit("update deck", curRoom.deck);
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
+        io.in(socket.roomCode).emit("set team score", 0, 0);
+        io.in(socket.roomCode).emit("set team score", 1, 0);
       }, WORD_SUBMIT_TIMER);
     } else {
       socket.emit("clear state");
@@ -114,21 +119,27 @@ io.on("connection", (socket) => {
     }
   });
 
-  // socket.on()
+  socket.on("score word", (teamIndex, word) => {
+    const curRoom = getRoom(socket.roomCode);
+    curRoom.scoreWord(teamIndex, word);
+    if (teamIndex === 0) {
+      io.in(socket.roomCode).emit(
+        "set team score",
+        teamIndex,
+        curRoom.team1.score
+      );
+    } else {
+      io.in(socket.roomCode).emit(
+        "set team score",
+        teamIndex,
+        curRoom.team2.score
+      );
+    }
+  });
 
   // socket.on("delete room", () => {
   //   deleteRoom(socket.roomCode);
   // });
-
-  socket.on("page close", () => {
-    const curRoom = getRoom(socket.roomCode);
-    if (curRoom) {
-      if (socket.username) leaveRoom(curRoom, socket.username);
-      if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
-        deleteRoom(socket.roomCode);
-      }
-    }
-  });
 
   socket.on("submit word", (word, explanation) => {
     const curRoom = getRoom(socket.roomCode);
@@ -140,6 +151,16 @@ io.on("connection", (socket) => {
     } else {
       socket.emit("error", "Something went wrong!");
       socket.emit("clear state");
+    }
+  });
+
+  socket.on("page close", () => {
+    const curRoom = getRoom(socket.roomCode);
+    if (curRoom) {
+      if (socket.username) leaveRoom(curRoom, socket.username);
+      if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
+        deleteRoom(socket.roomCode);
+      }
     }
   });
 
