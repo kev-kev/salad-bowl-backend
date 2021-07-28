@@ -103,6 +103,9 @@ io.on("connection", (socket) => {
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       curRoom.startGame();
+      curRoom.team1.isGuessing
+        ? io.in(socket.roomCode).emit("set guessing team index", 0)
+        : io.in(socket.roomCode).emit("set guessing team index", 1);
       io.in(socket.roomCode).emit("set phase", curRoom.phase);
       io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
       setTimeout(() => {
@@ -135,6 +138,7 @@ io.on("connection", (socket) => {
         curRoom.team2.score
       );
     }
+    io.in(socket.roomCode).emit("update deck", curRoom.deck);
   });
 
   // socket.on("delete room", () => {

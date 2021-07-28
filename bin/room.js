@@ -58,16 +58,15 @@ class Room {
   startGame() {
     // Randomly picks a team to go first and a user to be the clue giver
     this.phase = "submitting";
-    const turnOrder = [];
     const rand = Math.round(Math.random());
     shuffle(this.team1.users);
     shuffle(this.team2.users);
     if (rand === 0) {
-      turnOrder.push(0, 1);
       this.clueGiver = this.team1.users[0] || this.team2.users[0];
+      this.team1.isGuessing = true;
     } else {
-      turnOrder.push(1, 0);
       this.clueGiver = this.team2.users[0] || this.team1.users[0];
+      this.team2.isGuessing = true;
     }
     console.log("the cluegiver is:", this.clueGiver);
   }
