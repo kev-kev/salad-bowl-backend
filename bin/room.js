@@ -1,11 +1,15 @@
+// const { captureRejectionSymbol } = require("events");
+// let clueGiverIndex = 0;
+let turnCounter = 0;
+
 class Room {
   constructor(code) {
     this.code = code;
     this.round = 1;
     this.deck = [];
     this.discard = [];
-    this.team1 = { users: [], score: 0, isGuessing: false };
-    this.team2 = { users: [], score: 0, isGuessing: false };
+    this.team1 = { users: [], score: 0, isGuessing: false, clueGiverIndex: 0 };
+    this.team2 = { users: [], score: 0, isGuessing: false, clueGiverIndex: 0 };
     this.roomOwner = null;
     this.clueGiver = null;
     this.phase = "waiting";
@@ -61,13 +65,7 @@ class Room {
     const rand = Math.round(Math.random());
     shuffle(this.team1.users);
     shuffle(this.team2.users);
-    if (rand === 0) {
-      this.clueGiver = this.team1.users[0] || this.team2.users[0];
-      this.team1.isGuessing = true;
-    } else {
-      this.clueGiver = this.team2.users[0] || this.team1.users[0];
-      this.team2.isGuessing = true;
-    }
+    this.setClueGiver(rand);
     console.log("the cluegiver is:", this.clueGiver);
   }
 
@@ -81,8 +79,38 @@ class Room {
     }
   }
 
+  endTurn() {
+    if (turnCounter == 2) {
+      turnCounter = 0;
+    }
+    if (this.team1.isGuessing) {
+      this.team1.isGuessing = false;
+      this.team1.clueGiverIndex < this.team1.users.length - 1
+        ? this.team1.clueGiverIndex++
+        : (this.team1.clueGiverIndex = 0);
+      this.team2.isGuessing = true;
+      this.setClueGiver(0);
+    } else {
+      this.team2.isGuessing = false;
+      this.team2.clueGiverIndex < this.team2.users.length - 1
+        ? this.team2.clueGiverIndex++
+        : (this.team2.clueGiverIndex = 0);
+      this.team1.isGuessing = true;
+      this.setClueGiver(1);
+    }
+    turnCounter++;
+  }
+
   shuffleCards() {
     shuffle(this.deck);
+  }
+
+  setClueGiver(teamIndex) {
+    if (teamIndex === 0) {
+      this.clueGiver = this.team1.users[this.team1.clueGiverIndex];
+    } else {
+      this.clueGiver = this.team2.users[this.team2.clueGiverIndex];
+    }
   }
 }
 

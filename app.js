@@ -15,11 +15,12 @@ const io = require("socket.io")(server, {
 const PORT = 4001;
 server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
-const ROOM_CODE_LENGTH = 5;
 const ROOMS = [];
+const ROOM_CODE_LENGTH = 5;
+const MAX_USER_COUNT = 2;
 const DELETE_ROOM_TIMER = 5000;
 const WORD_SUBMIT_TIMER = 5000;
-const MAX_USER_COUNT = 2;
+const TURN_TIMER = 5000;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -103,9 +104,7 @@ io.on("connection", (socket) => {
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       curRoom.startGame();
-      curRoom.team1.isGuessing
-        ? io.in(socket.roomCode).emit("set guessing team index", 0)
-        : io.in(socket.roomCode).emit("set guessing team index", 1);
+      emitGuessingTeamIndex(curRoom);
       io.in(socket.roomCode).emit("set phase", curRoom.phase);
       io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
       setTimeout(() => {
@@ -115,6 +114,7 @@ io.on("connection", (socket) => {
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
         io.in(socket.roomCode).emit("set team score", 0, 0);
         io.in(socket.roomCode).emit("set team score", 1, 0);
+        beginTurnToggling(socket);
       }, WORD_SUBMIT_TIMER);
     } else {
       socket.emit("clear state");
@@ -216,4 +216,19 @@ function deleteRoom(roomCode) {
       ROOMS.splice(i, 1);
     }
   }
+}
+
+function emitGuessingTeamIndex(room) {
+  room.team1.isGuessing
+    ? io.in(room.code).emit("set guessing team index", 0)
+    : io.in(room.code).emit("set guessing team index", 1);
+}
+
+function beginTurnToggling(socket) {
+  setInterval(() => {
+    curRoom.endTurn();
+    emitGuessingTeamIndex(curRoom);
+    io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
+    console.log("new turn");
+  }, TURN_TIMER);
 }
