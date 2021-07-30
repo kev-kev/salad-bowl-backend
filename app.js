@@ -1,5 +1,4 @@
 const { Room } = require("./bin/room");
-// const { User } = require("./bin/user");
 const { Card } = require("./bin/card");
 
 const express = require("express");
@@ -17,7 +16,7 @@ server.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 const ROOMS = [];
 const ROOM_CODE_LENGTH = 5;
-const MAX_USER_COUNT = 2;
+const MAX_USER_COUNT = 12;
 const DELETE_ROOM_TIMER = 5000;
 const WORD_SUBMIT_TIMER = 5000;
 const TURN_TIMER = 5000;
@@ -171,10 +170,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     if (socket.username) {
       const curRoom = getRoom(socket.roomCode);
-      if (curRoom) {
-        socket.emit("leave room", socket.username, socket.roomCode);
-        leaveRoom(curRoom, socket.username);
-      }
+      if (curRoom) leaveRoom(curRoom, socket.username);
     }
   });
 });
@@ -187,7 +183,6 @@ function createRoomCode() {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   if (getRoom(result)) return createRoomCode();
-
   return result;
 }
 
@@ -204,17 +199,13 @@ function leaveRoom(curRoom, username) {
 
 function getRoom(roomCode) {
   for (let i = 0; i < ROOMS.length; i++) {
-    if (ROOMS[i].code === roomCode) {
-      return ROOMS[i];
-    }
+    if (ROOMS[i].code === roomCode) return ROOMS[i];
   }
 }
 
 function deleteRoom(roomCode) {
   for (let i = 0; i < ROOMS.length; i++) {
-    if (ROOMS[i].code === roomCode) {
-      ROOMS.splice(i, 1);
-    }
+    if (ROOMS[i].code === roomCode) ROOMS.splice(i, 1);
   }
 }
 
