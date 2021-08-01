@@ -210,9 +210,11 @@ function deleteRoom(roomCode) {
 }
 
 function emitGuessingTeamIndex(room) {
-  room.team1.isGuessing
-    ? io.in(room.code).emit("set guessing team index", 0)
-    : io.in(room.code).emit("set guessing team index", 1);
+  if (room.team1.isGuessing) {
+    io.in(room.code).emit("set guessing team index", 0);
+  } else {
+    io.in(room.code).emit("set guessing team index", 1);
+  }
 }
 
 function beginTurnToggling(socket) {
