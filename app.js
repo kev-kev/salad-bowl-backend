@@ -104,9 +104,7 @@ io.on("connection", (socket) => {
     curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       curRoom.startGame();
-      emitGuessingTeamIndex(curRoom);
       io.in(socket.roomCode).emit("set phase", curRoom.phase);
-      io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
       setTimeout(() => {
         curRoom.shuffleCards();
         curRoom.phase = "guessing";
@@ -114,7 +112,8 @@ io.on("connection", (socket) => {
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
         io.in(socket.roomCode).emit("set team score", 0, 0);
         io.in(socket.roomCode).emit("set team score", 1, 0);
-        console.log("begin first turn");
+        io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
+        emitGuessingTeamIndex(curRoom);
         beginTurnToggling(socket, curRoom);
       }, WORD_SUBMIT_TIMER);
     } else {
@@ -214,16 +213,15 @@ function deleteRoom(roomCode) {
 function emitGuessingTeamIndex(room) {
   if (room.team1.isGuessing) {
     io.in(room.code).emit("set guessing team index", 0);
+    console.log("Team 1's turn");
   } else {
     io.in(room.code).emit("set guessing team index", 1);
+    console.log("Team 2's turn");
   }
 }
 
 function beginTurnToggling(socket, curRoom) {
   let turnCount = 1;
-  // setTimeout(() => {
-  //   clearInterval(turnInterval);
-  // }, GUESSING_TIMER);
   let turnInterval = setInterval(() => {
     if (turnCount === GUESSING_TURN_COUNT) return clearInterval(turnInterval);
     curRoom.endTurn();

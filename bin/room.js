@@ -65,8 +65,11 @@ class Room {
     const rand = Math.round(Math.random());
     shuffle(this.team1.users);
     shuffle(this.team2.users);
+    rand === 0
+      ? (this.team1.isGuessing = true)
+      : (this.team2.isGuessing = true);
     this.setClueGiver(rand);
-    console.log("the cluegiver is:", this.clueGiver);
+    console.log("The cluegiver is:", this.clueGiver);
   }
 
   scoreWord(teamIndex, word) {
@@ -80,9 +83,7 @@ class Room {
   }
 
   endTurn() {
-    if (turnCounter == 2) {
-      turnCounter = 0;
-    }
+    if (turnCounter == 2) turnCounter = 0;
     if (this.team1.isGuessing) {
       this.team1.isGuessing = false;
       this.team1.clueGiverIndex < this.team1.users.length - 1
@@ -108,8 +109,16 @@ class Room {
   setClueGiver(teamIndex) {
     if (teamIndex === 0) {
       this.clueGiver = this.team1.users[this.team1.clueGiverIndex];
+      console.log(
+        "Setting clue giver on team 1 to",
+        this.team1.users[this.team1.clueGiverIndex]
+      );
     } else {
       this.clueGiver = this.team2.users[this.team2.clueGiverIndex];
+      console.log(
+        "Setting clue giver on team 2 to",
+        this.team2.users[this.team2.clueGiverIndex]
+      );
     }
   }
 }
