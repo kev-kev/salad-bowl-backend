@@ -20,6 +20,7 @@ const MAX_USER_COUNT = 12;
 const DELETE_ROOM_TIMER = 5000;
 const WORD_SUBMIT_TIMER = 5000;
 const TURN_TIMER = 5000;
+const GUESSING_TURN_COUNT = 4;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -113,7 +114,8 @@ io.on("connection", (socket) => {
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
         io.in(socket.roomCode).emit("set team score", 0, 0);
         io.in(socket.roomCode).emit("set team score", 1, 0);
-        beginTurnToggling(socket);
+        console.log("begin first turn");
+        beginTurnToggling(socket, curRoom);
       }, WORD_SUBMIT_TIMER);
     } else {
       socket.emit("clear state");
@@ -217,11 +219,17 @@ function emitGuessingTeamIndex(room) {
   }
 }
 
-function beginTurnToggling(socket) {
-  setInterval(() => {
+function beginTurnToggling(socket, curRoom) {
+  let turnCount = 1;
+  // setTimeout(() => {
+  //   clearInterval(turnInterval);
+  // }, GUESSING_TIMER);
+  let turnInterval = setInterval(() => {
+    if (turnCount === GUESSING_TURN_COUNT) return clearInterval(turnInterval);
     curRoom.endTurn();
     emitGuessingTeamIndex(curRoom);
     io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
+    turnCount++;
     console.log("new turn");
   }, TURN_TIMER);
 }
