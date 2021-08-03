@@ -19,7 +19,6 @@ class Room {
   // return 0 if added to team1 and 1 if added to team2
   addUserToTeam(username) {
     if (this.team1.users.length === 0 && this.team2.users.length === 0) {
-      console.log("Setting the room owner to:", username);
       this.roomOwner = username;
     }
     if (this.team1.users.length > this.team2.users.length) {
@@ -55,7 +54,6 @@ class Room {
     // If the removed user was the room leader, pick another user to be leader
     if (this.roomOwner === username) {
       this.roomOwner = getRandomUser(this.team1.users, this.team2.users);
-      console.log("New Room owner:", this.roomOwner);
     }
   }
 
@@ -69,7 +67,6 @@ class Room {
       ? (this.team1.isGuessing = true)
       : (this.team2.isGuessing = true);
     this.setClueGiver(rand);
-    console.log("The cluegiver is:", this.clueGiver);
   }
 
   scoreWord(teamIndex, word) {
@@ -109,16 +106,8 @@ class Room {
   setClueGiver(teamIndex) {
     if (teamIndex === 0) {
       this.clueGiver = this.team1.users[this.team1.clueGiverIndex];
-      console.log(
-        "Setting clue giver on team 1 to",
-        this.team1.users[this.team1.clueGiverIndex]
-      );
     } else {
       this.clueGiver = this.team2.users[this.team2.clueGiverIndex];
-      console.log(
-        "Setting clue giver on team 2 to",
-        this.team2.users[this.team2.clueGiverIndex]
-      );
     }
   }
 }

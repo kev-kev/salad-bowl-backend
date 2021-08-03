@@ -20,7 +20,6 @@ const MAX_USER_COUNT = 12;
 const DELETE_ROOM_TIMER = 5000;
 const WORD_SUBMIT_TIMER = 5000;
 const TURN_TIMER = 5000;
-const GUESSING_TURN_COUNT = 4;
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -112,7 +111,6 @@ io.on("connection", (socket) => {
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
         io.in(socket.roomCode).emit("set team score", 0, 0);
         io.in(socket.roomCode).emit("set team score", 1, 0);
-        // io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
         emitGuessingTeamIndex(curRoom);
         beginTurnToggling(socket, curRoom);
       }, WORD_SUBMIT_TIMER);
@@ -141,10 +139,6 @@ io.on("connection", (socket) => {
     io.in(socket.roomCode).emit("update deck", curRoom.deck);
   });
 
-  // socket.on("delete room", () => {
-  //   deleteRoom(socket.roomCode);
-  // });
-
   socket.on("submit word", (word, explanation) => {
     const curRoom = getRoom(socket.roomCode);
     if (curRoom) {
@@ -158,12 +152,37 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("new round", () => {
+    const curRoom = getRoom(socket.roomCode);
+    if (curRoom) {
+      // move to a fn in room?
+      curRoom.deck = curRoom.discard;
+      curRoom.shuffleCards();
+      curRoom.discard = [];
+      curRoom.phase === "guessing"
+        ? (curRoom.phase = "guessing2")
+        : (curRoom.phase = "guessing3");
+      io.in(socket.roomCode).emit("update deck", curRoom.deck);
+      io.in(socket.roomCode).emit("set phase", curRoom.phase);
+      // need to have whichever team start last time start this round
+      if (curRoom.team1.isGuessing) {
+        curRoom.team1.isGuessing = false;
+        curRoom.team2.isGuessing = true;
+      } else {
+        curRoom.team1.isGuessing = true;
+        curRoom.team2.isGuessing = false;
+      }
+      beginTurnToggling(socket, curRoom);
+    }
+  });
+
   socket.on("page close", () => {
     const curRoom = getRoom(socket.roomCode);
     if (curRoom) {
       if (socket.username) leaveRoom(curRoom, socket.username);
       if (curRoom.team1.users.length + curRoom.team2.users.length === 0) {
         deleteRoom(socket.roomCode);
+        console.log(socket.roomCode, "was deleted for being empty.");
       }
     }
   });
@@ -221,13 +240,11 @@ function emitGuessingTeamIndex(room) {
 }
 
 function beginTurnToggling(socket, curRoom) {
-  let turnCount = 1;
   let turnInterval = setInterval(() => {
-    if (turnCount === GUESSING_TURN_COUNT) return clearInterval(turnInterval);
+    if (curRoom.deck.length === 0) return clearInterval(turnInterval);
     curRoom.endTurn();
     emitGuessingTeamIndex(curRoom);
     io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
-    turnCount++;
     console.log("new turn");
   }, TURN_TIMER);
 }
