@@ -90,14 +90,14 @@ class Room {
         ? this.team1.clueGiverIndex++
         : (this.team1.clueGiverIndex = 0);
       this.team2.isGuessing = true;
-      this.setClueGiver(0);
+      this.setClueGiver(1);
     } else {
       this.team2.isGuessing = false;
       this.team2.clueGiverIndex < this.team2.users.length - 1
         ? this.team2.clueGiverIndex++
         : (this.team2.clueGiverIndex = 0);
       this.team1.isGuessing = true;
-      this.setClueGiver(1);
+      this.setClueGiver(0);
     }
     turnCounter++;
   }

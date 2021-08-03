@@ -112,7 +112,7 @@ io.on("connection", (socket) => {
         io.in(socket.roomCode).emit("set phase", curRoom.phase);
         io.in(socket.roomCode).emit("set team score", 0, 0);
         io.in(socket.roomCode).emit("set team score", 1, 0);
-        io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
+        // io.in(socket.roomCode).emit("set clue giver", curRoom.clueGiver);
         emitGuessingTeamIndex(curRoom);
         beginTurnToggling(socket, curRoom);
       }, WORD_SUBMIT_TIMER);
